@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Simple Template</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="">
+  	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<link href="https://fonts.googleapis.com/css?family=IM+Fell+DW+Pica&display=swap" rel="stylesheet">
+	<style>
+		body {display:none;}
+	</style>
+</head>
+<body>
+	<div id="container">
+		<div id="exit"></div>
+		<div id="left_page">
+			<p id='left_page_label' class='label'></p>
+		</div>
+		<div id="right_page">
+			<p id='right_page_label' class='label'></p>
+		</div>
+		<div id="controls"> 
+			<div id="left_arrow"></div>
+			<div id="right_arrow"></div>
+		</div>
+	</div>
+	
+	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script src="http://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="main.js"></script>
+	<script>
+		var page_index = {}
+		var pages = {}
+		var currentChapter = 0
+		$(function(){
+			window.addEventListener('message', function(event){
+				if (event.data.action == "openCookbook"){
+					pages = event.data.pages
+					LoadIndex()
+					LoadPages(0);
+					$('body').show();
+				}
+			});
+
+			$(document).keyup(function(e){
+				if (e.keyCode == 27){
+					reset()
+				}
+			})
+			$('#exit').click(function() {
+				reset()
+			});
+			$('#left_arrow').click(function() {
+				if (currentChapter >= 1) {
+					softreset()
+					currentChapter = currentChapter - 1
+					LoadPages(currentChapter);
+				}
+			});
+			$('#right_arrow').click(function() {
+				console.log(page_index[currentChapter + 1])
+				if (page_index[currentChapter + 1] != null) {
+					softreset()
+					currentChapter = currentChapter + 1
+					LoadPages(currentChapter);
+				}
+			});
+		});
+
+		function LoadIndex(){
+			let length = pages.length / 2
+			for (i = 0; i <= length; i++) {//0 = 0,1 1=2,3 2=4,5 3=6,7
+				if (i + 0.5 <= length){
+					let multiplied = i * 2 
+					let multipliedplus1 = multiplied + 1
+					page_index[i] = [multiplied, multipliedplus1]
+				}
+			}
+		}
+
+		function LoadPages(page_spread){
+			if (page_index[page_spread] != null) {
+				if (page_index[page_spread][0] != null) {
+					let shortcut = page_index[page_spread][0]
+					LoadPage(shortcut, 'left')
+				}
+				if (page_index[page_spread][1] != null) {
+					let shortcut = page_index[page_spread][1]
+					LoadPage(shortcut, 'right')
+				}
+			}
+		};
+
+		function LoadPage(page, side){
+			if (pages[page] != null){
+				document.getElementById(side+"_page_label").innerHTML=pages[page]['recipe'];
+				for (i = 0; i <= pages[page]['ingredients'].length; i++) {
+					if (pages[page]['ingredients'][i] != undefined) {
+						var para = document.createElement("p");
+						para.className = "createdElement";
+						var node = document.createTextNode(pages[page]['ingredients'][i]['ingredient']+' x '+pages[page]['ingredients'][i]['amount']+'');
+						para.appendChild(node);
+						var element = document.getElementById(side+"_page");
+						element.appendChild(para);
+					}
+				}
+			}
+		}
+
+		function softreset(){	
+			document.getElementById("left_page_label").innerHTML='';
+			document.getElementById("right_page_label").innerHTML='';
+			$('.createdElement').remove();
+		};
+
+		function reset(){	
+			$('body').hide();
+			page_index = {}
+			pages = {}
+			document.getElementById("left_page_label").innerHTML='';
+			document.getElementById("right_page_label").innerHTML='';
+			$('.createdElement').remove();
+			$.post('http://ninjadev_cooking/close');
+		};
+
+	</script>
+</body>
+</html>
